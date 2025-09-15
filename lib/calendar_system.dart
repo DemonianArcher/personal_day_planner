@@ -74,9 +74,11 @@ class CalendarSystemPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Calendar System'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: const UpcomingEventsWidget(),
+      body: const SafeArea(
+        child: Padding(
+          padding: EdgeInsets.all(16.0),
+          child: UpcomingEventsWidget(),
+        ),
       ),
     );
   }
@@ -88,59 +90,67 @@ class UpcomingEventsWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final events = ref.watch(calendarProvider);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+    return SafeArea(
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Expanded(
-              child: Text(
-                'Upcoming Events',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Upcoming Events',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
-              ),
+                IconButton(
+                  icon: const Icon(Icons.add, color: Colors.white, size: 28),
+                  tooltip: 'Add Event',
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => const AddEventDialog(),
+                    );
+                  },
+                ),
+              ],
             ),
-            IconButton(
-              icon: const Icon(Icons.add, color: Colors.white, size: 28),
-              tooltip: 'Add Event',
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => const AddEventDialog(),
-                );
-              },
+            const SizedBox(height: 24),
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: const Color(0xFF2F3136),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: events.isEmpty
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(32.0),
+                        child: Text(
+                          'No events yet.',
+                          style: TextStyle(fontSize: 18, color: Colors.white70),
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: events.length,
+                      itemBuilder: (context, index) {
+                        final event = events[index];
+                        return ListTile(
+                          title: Text(event.title, style: const TextStyle(color: Colors.white)),
+                          subtitle: Text(event.date.toString(), style: const TextStyle(color: Colors.white70)),
+                        );
+                      },
+                    ),
             ),
           ],
         ),
-        const SizedBox(height: 24),
-        Expanded(
-          child: Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFF2F3136),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: events.isEmpty
-                ? const Center(
-                    child: Text(
-                      'No events yet.',
-                      style: TextStyle(fontSize: 18, color: Colors.white70),
-                    ),
-                  )
-                : ListView.builder(
-                    itemCount: events.length,
-                    itemBuilder: (context, index) {
-                      final event = events[index];
-                      return ListTile(
-                        title: Text(event.title, style: const TextStyle(color: Colors.white)),
-                        subtitle: Text(event.date.toString(), style: const TextStyle(color: Colors.white70)),
-                      );
-                    },
-                  ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
@@ -165,124 +175,126 @@ class _AddEventDialogState extends ConsumerState<AddEventDialog> {
     return AlertDialog(
       backgroundColor: const Color(0xFF36393F),
       title: const Text('Create Event', style: TextStyle(color: Colors.white)),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: _titleController,
-            decoration: const InputDecoration(
-              labelText: 'Event Title',
-              labelStyle: TextStyle(color: Colors.white70),
-              enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.white24),
-              ),
-            ),
-            style: const TextStyle(color: Colors.white),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Text(
-                _selectedDate == null
-                    ? 'No date chosen'
-                    : 'Date: ${_selectedDate!.toLocal().toString().split(' ')[0]}',
-                style: const TextStyle(color: Colors.white70),
-              ),
-              const Spacer(),
-              TextButton(
-                onPressed: () async {
-                  final picked = await showDatePicker(
-                    context: context,
-                    initialDate: DateTime.now(),
-                    firstDate: DateTime(2020),
-                    lastDate: DateTime(2100),
-                  );
-                  if (picked != null) {
-                    setState(() {
-                      _selectedDate = picked;
-                    });
-                  }
-                },
-                child: const Text('Pick Date'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            onChanged: (value) {
-              setState(() {
-                _description = value;
-              });
-            },
-            decoration: const InputDecoration(
-              labelText: 'Description',
-              labelStyle: TextStyle(color: Colors.white70),
-              enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.white24),
-              ),
-            ),
-            style: const TextStyle(color: Colors.white),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            onChanged: (value) {
-              setState(() {
-                _location = value;
-              });
-            },
-            decoration: const InputDecoration(
-              labelText: 'Location',
-              labelStyle: TextStyle(color: Colors.white70),
-              enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.white24),
-              ),
-            ),
-            style: const TextStyle(color: Colors.white),
-          ),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
-            value: _repeating,
-            onChanged: (value) {
-              setState(() {
-                _repeating = value!;
-              });
-            },
-            items: <String>['None', 'Daily', 'Weekly', 'Monthly']
-                .map<DropdownMenuItem<String>>((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(
-                  value,
-                  style: const TextStyle(color: Colors.white),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _titleController,
+              decoration: const InputDecoration(
+                labelText: 'Event Title',
+                labelStyle: TextStyle(color: Colors.white70),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white24),
                 ),
-              );
-            }).toList(),
-            decoration: InputDecoration(
-              labelText: 'Repeating',
-              labelStyle: const TextStyle(color: Colors.white70),
-              enabledBorder: const UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.white24),
               ),
+              style: const TextStyle(color: Colors.white),
             ),
-            dropdownColor: const Color(0xFF2F3136),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            onChanged: (value) {
-              setState(() {
-                _time = value;
-              });
-            },
-            decoration: const InputDecoration(
-              labelText: 'Time (e.g., 09:00 AM)',
-              labelStyle: TextStyle(color: Colors.white70),
-              enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.white24),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Text(
+                  _selectedDate == null
+                      ? 'No date chosen'
+                      : 'Date: ${_selectedDate!.toLocal().toString().split(' ')[0]}',
+                  style: const TextStyle(color: Colors.white70),
+                ),
+                const Spacer(),
+                TextButton(
+                  onPressed: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime(2100),
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _selectedDate = picked;
+                      });
+                    }
+                  },
+                  child: const Text('Pick Date'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              onChanged: (value) {
+                setState(() {
+                  _description = value;
+                });
+              },
+              decoration: const InputDecoration(
+                labelText: 'Description',
+                labelStyle: TextStyle(color: Colors.white70),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white24),
+                ),
               ),
+              style: const TextStyle(color: Colors.white),
             ),
-            style: const TextStyle(color: Colors.white),
-          ),
-        ],
+            const SizedBox(height: 16),
+            TextField(
+              onChanged: (value) {
+                setState(() {
+                  _location = value;
+                });
+              },
+              decoration: const InputDecoration(
+                labelText: 'Location',
+                labelStyle: TextStyle(color: Colors.white70),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white24),
+                ),
+              ),
+              style: const TextStyle(color: Colors.white),
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: _repeating,
+              onChanged: (value) {
+                setState(() {
+                  _repeating = value!;
+                });
+              },
+              items: <String>['None', 'Daily', 'Weekly', 'Monthly']
+                  .map<DropdownMenuItem<String>>((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(
+                    value,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                );
+              }).toList(),
+              decoration: InputDecoration(
+                labelText: 'Repeating',
+                labelStyle: const TextStyle(color: Colors.white70),
+                enabledBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white24),
+                ),
+              ),
+              dropdownColor: const Color(0xFF2F3136),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              onChanged: (value) {
+                setState(() {
+                  _time = value;
+                });
+              },
+              decoration: const InputDecoration(
+                labelText: 'Time (e.g., 09:00 AM)',
+                labelStyle: TextStyle(color: Colors.white70),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white24),
+                ),
+              ),
+              style: const TextStyle(color: Colors.white),
+            ),
+          ],
+        ),
       ),
       actions: [
         TextButton(

@@ -13,7 +13,7 @@ class ThemeProvider with ChangeNotifier {
   ThemeData get themeData => ThemeData.dark().copyWith(
         scaffoldBackgroundColor: const Color(0xFF36393F),
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color.fromARGB(255, 153, 36, 36), 
+          seedColor: const Color.fromARGB(98, 153, 36, 36), 
           brightness: Brightness.dark,
           surface: const Color(0xFF36393F),
         ),

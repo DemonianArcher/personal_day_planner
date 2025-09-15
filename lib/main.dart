@@ -37,7 +37,9 @@ class HomePage extends StatelessWidget {
       ),
       body: const Padding(
         padding: EdgeInsets.all(16.0),
-        child: UpcomingEventsWidget(),
+        child: SingleChildScrollView(
+          child: UpcomingEventsWidget(),
+        ),
       ),
     );
   }
